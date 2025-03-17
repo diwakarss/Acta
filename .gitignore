@@ -27,7 +27,11 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+.env.development
+.env.test
+.env.production
 
 # typescript
 *.tsbuildinfo
@@ -38,3 +42,4 @@ context.ts
 context.txt
 context/
 PROGRESS.md
+.gitignore
