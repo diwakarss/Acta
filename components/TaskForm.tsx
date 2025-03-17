@@ -18,8 +18,9 @@ import {
   Switch
 } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Task, ChecklistItem, Tag } from '../src/store/taskStore';
 import useTaskStore from '../src/store/taskStore';
@@ -118,7 +119,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
   };
   
   // Handle date picker changes
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
       setDueDate(selectedDate);
@@ -126,7 +127,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
   };
   
   // Handle time picker changes
-  const handleTimeChange = (event: any, selectedTime?: Date) => {
+  const handleTimeChange = (event: DateTimePickerEvent, selectedTime?: Date) => {
     setShowTimePicker(false);
     if (selectedTime) {
       setDueTime(selectedTime);
@@ -134,7 +135,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
   };
   
   // Handle reminder time picker changes
-  const handleReminderChange = (event: any, selectedTime?: Date) => {
+  const handleReminderChange = (event: DateTimePickerEvent, selectedTime?: Date) => {
     setShowReminderPicker(false);
     if (selectedTime) {
       setReminderTime(selectedTime);
@@ -176,19 +177,24 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
     if (task) {
       // Update existing task
       updateTask(task.id, taskData);
-    } else {
-      // Add new task
-      addTask(taskData as any);
-    }
-    
-    // Handle reminder if needed
-    if (hasReminder && reminderTime) {
-      if (task) {
+      
+      // Handle reminder if needed
+      if (hasReminder && reminderTime) {
         // TODO: Update reminder
-      } else {
-        // Schedule a new reminder
-        const taskId = task ? task.id : 'new-task'; // This will be replaced with the actual ID
-        await addReminder(taskId, reminderTime.toISOString(), repeatOption);
+      }
+    } else {
+      // For new tasks, we need to generate an ID first since addTask doesn't return it
+      const newTaskId = uuidv4();
+      
+      // Add new task with the pre-generated ID
+      addTask({
+        ...taskData,
+        id: newTaskId
+      } as any);
+      
+      // Handle reminder if needed
+      if (hasReminder && reminderTime) {
+        await addReminder(newTaskId, reminderTime.toISOString(), repeatOption);
       }
     }
     
