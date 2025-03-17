@@ -5,7 +5,25 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import useTaskStore from '../../src/store/taskStore';
-import { Area, Project } from '../../src/store/taskStore';
+
+// Define interfaces for Area and Project
+interface Area {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+  areaId: string | null;
+  dueDate: string | null;
+}
 
 export default function AreasScreen() {
   const theme = useTheme();

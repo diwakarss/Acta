@@ -4,8 +4,11 @@ import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { RadioButton } from 'react-native-paper';
 
-import useWidgetStore, { WidgetType, WidgetSize } from '../../src/store/widgetStore';
-import useTaskStore from '../../src/store/taskStore';
+// Use proper imports with @ path alias
+import useWidgetStore from '@/src/store/widgetStore';
+import useTaskStore from '@/src/store/taskStore';
+// Import types from types directory
+import { WidgetType, WidgetSize } from '@/src/types';
 
 // Predefined colors for widgets
 const COLORS = [

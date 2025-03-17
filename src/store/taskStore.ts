@@ -2,69 +2,17 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 
-// Define types for our task management system
-export type ChecklistItem = {
-  id: string;
-  text: string;
-  completed: boolean;
-};
+// Import cloud sync utilities
+import cloudSync from '../utils/cloudSync';
 
-export type Tag = {
-  id: string;
-  name: string;
-  color: string;
-};
-
-export type Task = {
-  id: string;
-  title: string;
-  notes: string;
-  checklist: ChecklistItem[];
-  completed: boolean;
-  createdAt: string;
-  updatedAt: string;
-  dueDate: string | null;
-  dueTime: string | null;
-  reminder: string | null;
-  repeatOption: 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
-  tags: string[]; // Tag IDs
-  projectId: string | null;
-  areaId: string | null;
-  icon?: string;
-  color?: string;
-  isEveningTask: boolean;
-  isSomedayTask: boolean;
-};
-
-export type Project = {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  icon: string;
-  areaId: string | null;
-  headings: Heading[];
-  createdAt: string;
-  updatedAt: string;
-  dueDate: string | null;
-};
-
-export type Heading = {
-  id: string;
-  name: string;
-  projectId: string;
-  order: number;
-};
-
-export type Area = {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  icon: string;
-  createdAt: string;
-  updatedAt: string;
-};
+import { 
+  Task, 
+  ChecklistItem, 
+  Tag, 
+  Project, 
+  Heading, 
+  Area 
+} from '../types';
 
 // Define the store state
 interface TaskState {
@@ -578,19 +526,72 @@ const useTaskStore = create<TaskState>((set, get) => ({
   // Storage operations
   initializeState: async () => {
     try {
-      const storedTasks = await AsyncStorage.getItem('tasks');
-      const storedProjects = await AsyncStorage.getItem('projects');
-      const storedAreas = await AsyncStorage.getItem('areas');
-      const storedTags = await AsyncStorage.getItem('tags');
+      // Try to get data through cloud sync merging
+      const tasks = await cloudSync.mergeData('tasks');
+      const projects = await cloudSync.mergeData('projects');
+      const areas = await cloudSync.mergeData('areas');
+      const tags = await cloudSync.mergeData('tags');
       
       set({
-        tasks: storedTasks ? JSON.parse(storedTasks) : [],
-        projects: storedProjects ? JSON.parse(storedProjects) : [],
-        areas: storedAreas ? JSON.parse(storedAreas) : [],
-        tags: storedTags ? JSON.parse(storedTags) : []
+        tasks: tasks || [],
+        projects: projects || [],
+        areas: areas || [],
+        tags: tags || []
+      });
+      
+      // Set up real-time syncing for tasks
+      cloudSync.setupCloudSync('tasks', (updatedTasks) => {
+        if (updatedTasks) {
+          set({ tasks: updatedTasks });
+        }
+      });
+      
+      // Set up real-time syncing for projects
+      cloudSync.setupCloudSync('projects', (updatedProjects) => {
+        if (updatedProjects) {
+          set({ projects: updatedProjects });
+        }
+      });
+      
+      // Set up real-time syncing for areas
+      cloudSync.setupCloudSync('areas', (updatedAreas) => {
+        if (updatedAreas) {
+          set({ areas: updatedAreas });
+        }
+      });
+      
+      // Set up real-time syncing for tags
+      cloudSync.setupCloudSync('tags', (updatedTags) => {
+        if (updatedTags) {
+          set({ tags: updatedTags });
+        }
       });
     } catch (error) {
       console.error('Error initializing task store:', error);
+      
+      // Fall back to local storage if cloud sync fails
+      try {
+        const storedTasks = await AsyncStorage.getItem('tasks');
+        const storedProjects = await AsyncStorage.getItem('projects');
+        const storedAreas = await AsyncStorage.getItem('areas');
+        const storedTags = await AsyncStorage.getItem('tags');
+        
+        set({
+          tasks: storedTasks ? JSON.parse(storedTasks) : [],
+          projects: storedProjects ? JSON.parse(storedProjects) : [],
+          areas: storedAreas ? JSON.parse(storedAreas) : [],
+          tags: storedTags ? JSON.parse(storedTags) : []
+        });
+      } catch (localError) {
+        console.error('Error reading from local storage:', localError);
+        // Initialize with empty arrays as last resort
+        set({
+          tasks: [],
+          projects: [],
+          areas: [],
+          tags: []
+        });
+      }
     }
   },
   
@@ -598,10 +599,17 @@ const useTaskStore = create<TaskState>((set, get) => ({
     try {
       const { tasks, projects, areas, tags } = get();
       
+      // Persist to local storage
       await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
       await AsyncStorage.setItem('projects', JSON.stringify(projects));
       await AsyncStorage.setItem('areas', JSON.stringify(areas));
       await AsyncStorage.setItem('tags', JSON.stringify(tags));
+      
+      // Sync to cloud
+      await cloudSync.syncToCloud('tasks', tasks);
+      await cloudSync.syncToCloud('projects', projects);
+      await cloudSync.syncToCloud('areas', areas);
+      await cloudSync.syncToCloud('tags', tags);
     } catch (error) {
       console.error('Error persisting task store:', error);
     }

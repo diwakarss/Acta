@@ -5,7 +5,7 @@ import { useTheme, Text, Checkbox } from 'react-native-paper';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { format } from 'date-fns';
 
-import { Task as TaskType } from '../src/store/taskStore';
+import { Task as TaskType } from '../src/types';
 import useTaskStore from '../src/store/taskStore';
 
 type TaskProps = {

@@ -4,6 +4,9 @@ import { MD3DarkTheme, MD3LightTheme, adaptNavigationTheme } from 'react-native-
 import { DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native';
 import { ColorSchemeName } from 'react-native';
 
+// Import cloud sync utilities
+import cloudSync from '../utils/cloudSync';
+
 // Adapt navigation theme to work with React Native Paper
 const { LightTheme, DarkTheme } = adaptNavigationTheme({
   reactNavigationLight: NavigationDefaultTheme,
@@ -147,8 +150,53 @@ const useThemeStore = create<ThemeState>((set, get) => ({
   // Storage operations
   initializeTheme: async () => {
     try {
-      const storedTheme = await AsyncStorage.getItem('theme');
+      // Try to get merged data from cloud and local storage
+      const themeData = await cloudSync.mergeData('theme');
       
+      if (themeData) {
+        const { isDarkMode, useSystemTheme } = themeData;
+        
+        if (useSystemTheme) {
+          const systemIsDark = get().systemTheme === 'dark';
+          set({
+            useSystemTheme: true,
+            isDarkMode: systemIsDark,
+            theme: systemIsDark ? CustomDarkTheme : CustomLightTheme,
+          });
+        } else {
+          set({
+            isDarkMode,
+            theme: isDarkMode ? CustomDarkTheme : CustomLightTheme,
+            useSystemTheme: false,
+          });
+        }
+      }
+      
+      // Set up real-time syncing
+      cloudSync.setupCloudSync('theme', (updatedTheme) => {
+        if (updatedTheme) {
+          const { isDarkMode, useSystemTheme } = updatedTheme;
+          if (useSystemTheme) {
+            const systemIsDark = get().systemTheme === 'dark';
+            set({
+              useSystemTheme: true,
+              isDarkMode: systemIsDark,
+              theme: systemIsDark ? CustomDarkTheme : CustomLightTheme,
+            });
+          } else {
+            set({
+              isDarkMode,
+              theme: isDarkMode ? CustomDarkTheme : CustomLightTheme,
+              useSystemTheme: false,
+            });
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error initializing theme store:', error);
+      
+      // Fall back to local storage if cloud sync fails
+      const storedTheme = await AsyncStorage.getItem('theme');
       if (storedTheme) {
         const { isDarkMode, useSystemTheme } = JSON.parse(storedTheme);
         
@@ -167,15 +215,19 @@ const useThemeStore = create<ThemeState>((set, get) => ({
           });
         }
       }
-    } catch (error) {
-      console.error('Error initializing theme store:', error);
     }
   },
   
   persistTheme: async () => {
     try {
       const { isDarkMode, useSystemTheme } = get();
-      await AsyncStorage.setItem('theme', JSON.stringify({ isDarkMode, useSystemTheme }));
+      const themeData = { isDarkMode, useSystemTheme };
+      
+      // Persist to local storage
+      await AsyncStorage.setItem('theme', JSON.stringify(themeData));
+      
+      // Sync to cloud
+      await cloudSync.syncToCloud('theme', themeData);
     } catch (error) {
       console.error('Error persisting theme store:', error);
     }

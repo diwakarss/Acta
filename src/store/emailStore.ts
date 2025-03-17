@@ -4,28 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import * as MailComposer from 'expo-mail-composer';
 import { Alert, Linking } from 'react-native';
 
-import { Task } from './taskStore';
-
-// Define types for our email system
-export type EmailSettings = {
-  forwardingAddress: string;
-  isEmailToTaskEnabled: boolean;
-  lastSyncTimestamp: number | null;
-};
-
-export type EmailToTaskRule = {
-  id: string;
-  name: string;
-  isEnabled: boolean;
-  fromAddresses: string[];
-  subjectContains: string[];
-  bodyContains: string[];
-  assignToProject: string | null;
-  assignToArea: string | null;
-  addTags: string[];
-  isEveningTask: boolean;
-  isSomedayTask: boolean;
-};
+import { Task } from '../types';
+import { EmailSettings, EmailToTaskRule } from '../types';
 
 // Define the store state
 interface EmailState {

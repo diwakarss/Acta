@@ -4,15 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
-// Define types for our notification system
-export type Reminder = {
-  id: string;
-  taskId: string;
-  scheduledTime: string;
-  notificationId: string;
-  repeat: 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
-  customPattern?: string; // For custom repeat patterns
-};
+import { Reminder } from '../types';
 
 // Define the store state
 interface NotificationState {

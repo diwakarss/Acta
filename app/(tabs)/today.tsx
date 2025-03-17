@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import TaskList from '../../components/TaskList';
 import TaskForm from '../../components/TaskForm';
 import useTaskStore from '../../src/store/taskStore';
-import { Task } from '../../src/store/taskStore';
+import { Task } from '../../src/types';
 
 export default function TodayScreen() {
   const theme = useTheme();

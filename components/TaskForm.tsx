@@ -22,7 +22,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Task, ChecklistItem, Tag } from '../src/store/taskStore';
+import { Task, ChecklistItem, Tag } from '../src/types';
 import useTaskStore from '../src/store/taskStore';
 import useNotificationStore from '../src/store/notificationStore';
 

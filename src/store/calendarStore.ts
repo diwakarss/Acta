@@ -4,27 +4,8 @@ import * as Calendar from 'expo-calendar';
 import { Platform } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Task } from './taskStore';
-
-// Define types for our calendar system
-export type CalendarEvent = {
-  id: string;
-  taskId: string;
-  calendarId: string;
-  eventId: string;
-  title: string;
-  startDate: string;
-  endDate: string;
-  allDay: boolean;
-  notes: string;
-};
-
-export type CalendarAccount = {
-  id: string;
-  name: string;
-  type: 'google' | 'apple' | 'other';
-  isEnabled: boolean;
-};
+import { Task } from '../types';
+import { CalendarEvent, CalendarAccount } from '../types';
 
 // Define the store state
 interface CalendarState {

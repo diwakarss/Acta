@@ -3,8 +3,23 @@ import { View, Text, StyleSheet, ScrollView, Switch, TextInput, TouchableOpacity
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import useEmailStore, { EmailToTaskRule } from '../../src/store/emailStore';
+import useEmailStore from '../../src/store/emailStore';
 import useTaskStore from '../../src/store/taskStore';
+
+// Define the EmailToTaskRule interface
+interface EmailToTaskRule {
+  id: string;
+  name: string;
+  isEnabled: boolean;
+  fromAddresses: string[];
+  subjectContains: string[];
+  bodyContains: string[];
+  assignToProject: string | null;
+  assignToArea: string | null;
+  addTags: string[];
+  isEveningTask: boolean;
+  isSomedayTask: boolean;
+}
 
 export default function EmailSettingsScreen() {
   const { 
@@ -115,7 +130,7 @@ export default function EmailSettingsScreen() {
           <View style={styles.ruleDetails}>
             <Text style={styles.sectionTitle}>From Addresses</Text>
             <View style={styles.tagsContainer}>
-              {rule.fromAddresses.map((address, index) => (
+              {rule.fromAddresses.map((address: string, index: number) => (
                 <View key={index} style={styles.tag}>
                   <Text style={styles.tagText}>{address}</Text>
                   <TouchableOpacity
@@ -151,7 +166,7 @@ export default function EmailSettingsScreen() {
             
             <Text style={styles.sectionTitle}>Subject Contains</Text>
             <View style={styles.tagsContainer}>
-              {rule.subjectContains.map((text, index) => (
+              {rule.subjectContains.map((text: string, index: number) => (
                 <View key={index} style={styles.tag}>
                   <Text style={styles.tagText}>{text}</Text>
                   <TouchableOpacity
@@ -187,7 +202,7 @@ export default function EmailSettingsScreen() {
             
             <Text style={styles.sectionTitle}>Body Contains</Text>
             <View style={styles.tagsContainer}>
-              {rule.bodyContains.map((text, index) => (
+              {rule.bodyContains.map((text: string, index: number) => (
                 <View key={index} style={styles.tag}>
                   <Text style={styles.tagText}>{text}</Text>
                   <TouchableOpacity
@@ -280,7 +295,7 @@ export default function EmailSettingsScreen() {
             
             <Text style={styles.sectionTitle}>Tags</Text>
             <View style={styles.tagsContainer}>
-              {rule.addTags.map((tagId, index) => {
+              {rule.addTags.map((tagId: string, index: number) => {
                 const tag = tags.find(t => t.id === tagId);
                 return (
                   <View key={index} style={[styles.tag, { backgroundColor: tag?.color || '#ddd' }]}>
