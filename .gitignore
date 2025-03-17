@@ -32,13 +32,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# Context file (as per requirements)
+# Project specific files
 context.js
 context.ts
-context/
 context.txt
-PROGRESS.md
-# Context file (as per requirements)
-context.js
-context.ts
 context/
+PROGRESS.md
