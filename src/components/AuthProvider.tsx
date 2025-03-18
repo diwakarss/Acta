@@ -10,7 +10,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithCredential,
-  OAuthProvider
+  OAuthProvider,
+  Unsubscribe
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
@@ -18,18 +19,21 @@ import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
+import { maybeCompleteAuthSession } from 'expo-web-browser';
+import { getFirebaseAuth } from '../utils/firebase';
 
-// Configure WebBrowser for auth redirects
-WebBrowser.maybeCompleteAuthSession();
+// Close the authentication window
+maybeCompleteAuthSession();
 
-// Get environment variables from Expo's Constants
+// Helper to get environment variables
 const getEnvVariable = (key: string): string => {
-  const value = Constants.expoConfig?.extra?.[key];
-  if (!value) {
-    console.warn(`Environment variable ${key} not found!`);
-    return '';
+  if (Constants?.expoConfig?.extra?.[key]) {
+    return Constants.expoConfig.extra[key] as string;
   }
-  return value as string;
+  if (process.env[key]) {
+    return process.env[key] as string;
+  }
+  return '';
 };
 
 // Firebase configuration from environment variables
@@ -83,45 +87,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Get Firebase auth instance
+  const auth = getFirebaseAuth();
+  
   useEffect(() => {
-    // Initialize auth with proper error handling
-    let unsubscribe = () => {};
-    
-    try {
-      // Get the auth instance
-      const auth = getAuth();
-      console.log('Setting up auth state listener');
-      
-      // Listen for auth state changes
-      unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-        console.log('Auth state changed:', currentUser ? 'User logged in' : 'No user');
-        setUser(currentUser);
-        setIsLoading(false);
-        
-        // If we have a user, store their email for future auto-login suggestions
-        if (currentUser?.email) {
-          await AsyncStorage.setItem('lastUserEmail', currentUser.email);
-        }
-      }, (error) => {
-        console.error('Auth state change error:', error);
-        setError(error.message);
-        setIsLoading(false);
-      });
-
-      // Check if we previously had an email stored for auto-login suggestions
-      AsyncStorage.getItem('lastUserEmail').then(email => {
-        if (email) {
-          console.log('Last logged in user:', email);
-        }
-      });
-    } catch (error) {
-      console.error('Error setting up auth listener:', error);
+    // If auth is not initialized, set loading to false
+    if (!auth) {
+      console.warn('Firebase Auth not initialized');
       setIsLoading(false);
-      setError('Failed to initialize authentication.');
+      return;
     }
+    
+    let unsubscribe: Unsubscribe;
+    
+    const setupAuthListener = async () => {
+      try {
+        // Listen for auth state changes
+        unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+          console.log('Auth state changed:', currentUser ? 'User logged in' : 'No user');
+          setUser(currentUser);
+          setIsLoading(false);
+          
+          // If we have a user, store their email for future auto-login suggestions
+          if (currentUser?.email) {
+            await AsyncStorage.setItem('lastUserEmail', currentUser.email);
+          }
+        }, (error) => {
+          console.error('Auth state change error:', error);
+          setError(error.message);
+          setIsLoading(false);
+        });
+
+        // Check if we previously had an email stored for auto-login suggestions
+        AsyncStorage.getItem('lastUserEmail').then(email => {
+          if (email) {
+            console.log('Last logged in user:', email);
+          }
+        });
+      } catch (error) {
+        console.error('Error setting up auth listener:', error);
+        setIsLoading(false);
+        setError('Failed to initialize authentication.');
+      }
+    };
+
+    setupAuthListener();
 
     // Clean up the listener when the component unmounts
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string): Promise<void> => {
@@ -130,7 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log('Attempting to sign in with email:', email);
-      const auth = getAuth();
       
       // Check if we have the auth instance
       if (!auth) {
@@ -171,7 +187,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log('Attempting to create account with email:', email);
-      const auth = getAuth();
       
       // Check if we have the auth instance
       if (!auth) {
@@ -211,7 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log('Attempting to sign out');
-      const auth = getAuth();
       
       // Check if we have the auth instance
       if (!auth) {
@@ -235,7 +249,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log('Attempting to sign in with Google');
-      const auth = getAuth();
       
       // Check if we have the auth instance
       if (!auth) {
@@ -251,12 +264,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         // Native implementation using Expo AuthSession
         try {
-          // Get Firebase project ID from config
-          const projectId = firebaseConfig.projectId;
-          if (!projectId) {
-            throw new Error('Firebase project ID is missing from configuration');
-          }
-          
           // Get Expo client ID for Google auth
           const expoClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
           const androidClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;

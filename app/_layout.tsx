@@ -9,8 +9,11 @@ import 'react-native-reanimated';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DarkTheme, DefaultTheme } from '@react-navigation/native';
-import { initializeApp } from 'firebase/app';
+import { initializeFirebase } from '../src/utils/firebase';
 import Constants from 'expo-constants';
+
+// Import web styles utility to ensure CSS is loaded for web platform
+import '@/src/utils/webStyles';
 
 // Import actual stores using the @ path alias
 import useThemeStore from '@/src/store/themeStore';
@@ -24,45 +27,6 @@ import { AuthProvider, useAuth } from '@/src/components/AuthProvider';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-
-// Initialize Firebase
-const initializeFirebase = () => {
-  try {
-    // Get Firebase config from Expo Constants
-    const extra = Constants.expoConfig?.extra;
-    if (!extra) {
-      console.warn('Missing Expo configuration in Constants.');
-      return;
-    }
-
-    const firebaseConfig = {
-      apiKey: extra.EXPO_PUBLIC_FIREBASE_API_KEY,
-      authDomain: extra.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: extra.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: extra.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: extra.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: extra.EXPO_PUBLIC_FIREBASE_APP_ID,
-    };
-
-    // Log the Firebase config for debugging
-    console.log('Firebase Config:', JSON.stringify(firebaseConfig, null, 2));
-
-    // Check if essential Firebase config values are present
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-      console.warn('Firebase configuration is incomplete. Some features may not work correctly.');
-      return;
-    }
-
-    // Initialize Firebase
-    initializeApp(firebaseConfig);
-    console.log('Firebase initialized successfully');
-  } catch (error) {
-    console.error('Error initializing Firebase:', error);
-  }
-};
-
-// Initialize Firebase when app starts
-initializeFirebase();
 
 function RootLayoutNav() {
   // Get theme from store

@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useSyncStatus from '../hooks/useSyncStatus';
+import { combineStyles } from '@/src/utils/webStyles';
 
 // Explicitly type the valid icon names
 type IconName = 'cloud-check' | 'cloud-off-outline' | 'cloud-sync' | 'cloud-alert' | 'cloud-question';
@@ -19,6 +20,9 @@ const WebSyncIndicator: React.FC<SyncStatusIndicatorProps> = ({
 }) => {
   const theme = useTheme();
   
+  // Add this to the CSS styles instead of inline
+  const textColorStyle = { color: theme.colors.primary };
+  
   // Extremely simplified static indicator for web to avoid state management
   if (compact) {
     return (
@@ -33,21 +37,21 @@ const WebSyncIndicator: React.FC<SyncStatusIndicatorProps> = ({
   }
   
   return (
-    <View style={styles.container}>
-      <View style={styles.statusContainer}>
+    <View style={combineStyles(styles.container, 'sync-container')}>
+      <View style={combineStyles(styles.statusContainer, 'sync-status-container')}>
         <MaterialCommunityIcons 
           name="cloud-check" 
           size={18} 
           color={theme.colors.primary} 
-          style={styles.icon} 
+          style={combineStyles(styles.icon, 'sync-icon')} 
         />
-        <Text variant="labelMedium" style={{ color: theme.colors.primary }}>
+        <Text variant="labelMedium" style={textColorStyle}>
           Synced
         </Text>
       </View>
       
       {showLastSynced && (
-        <Text variant="labelSmall" style={styles.lastSyncedText}>
+        <Text variant="labelSmall" style={combineStyles(styles.lastSyncedText, 'sync-last-updated')}>
           Tap to sync manually
         </Text>
       )}
@@ -126,7 +130,7 @@ const NativeSyncIndicator: React.FC<SyncStatusIndicatorProps> = ({
           color={statusDetails.color} 
           style={styles.icon} 
         />
-        <Text variant="labelMedium" style={{ color: statusDetails.color }}>
+        <Text variant="labelMedium" style={[styles.statusText, { color: statusDetails.color }]}>
           {statusDetails.label}
         </Text>
       </View>
@@ -159,6 +163,9 @@ const styles = StyleSheet.create({
   lastSyncedText: {
     marginTop: 2,
     opacity: 0.7,
+  },
+  statusText: {
+    // Add this style for the text that shows status
   }
 });
 

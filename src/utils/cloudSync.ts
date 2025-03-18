@@ -1,4 +1,3 @@
-import { initializeApp, FirebaseApp } from 'firebase/app';
 import { 
   getFirestore, 
   doc, 
@@ -14,13 +13,16 @@ import {
   serverTimestamp,
   DocumentData,
   DocumentSnapshot,
-  Firestore
+  Firestore,
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, User, Auth } from 'firebase/auth';
+import { User, Auth, onAuthStateChanged } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
+import { getFirestoreDB, getFirebaseAuth } from './firebase';
 
 // Type for sync operations that need to be queued when offline
 type SyncOperation = {
@@ -55,30 +57,15 @@ const firebaseConfig = {
   appId: getEnvVariable('EXPO_PUBLIC_FIREBASE_APP_ID')
 };
 
-// Initialize Firebase only if we have valid configuration
-let app: FirebaseApp | undefined;
-let db: Firestore | undefined;
-let auth: Auth | undefined;
-
-try {
-  // Validate the config has at least an API key and project ID
-  if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-    console.log('Firebase initialized successfully');
-  } else {
-    console.warn('Firebase configuration is incomplete. Using local storage only.');
-  }
-} catch (error) {
-  console.error('Error initializing Firebase:', error);
-}
-
 // Types
 type SyncableData = 'tasks' | 'projects' | 'areas' | 'tags' | 'theme' | 'widgets' | 'email' | 'calendar' | 'notifications';
 
 // Current user
 let currentUser: User | null = null;
+
+// Get the Firestore and Auth instances
+const db = getFirestoreDB();
+const auth = getFirebaseAuth();
 
 // Setup network connectivity listener
 export const setupConnectivityListener = () => {
@@ -120,10 +107,10 @@ const isAuthenticated = (): boolean => {
   return currentUser !== null;
 };
 
-// Utility to check if Firebase is initialized
-const isFirebaseInitialized = (): boolean => {
-  return !!db && !!auth;
-};
+// Local function to check if Firebase is initialized
+function isFirebaseInitialized(): boolean {
+  return db !== undefined && auth !== undefined;
+}
 
 // Utility to check if device is online
 const isOnline = (): boolean => {

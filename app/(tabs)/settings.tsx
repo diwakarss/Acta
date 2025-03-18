@@ -11,6 +11,7 @@ import useNotificationStore from '../../src/store/notificationStore';
 import SyncStatusIndicator from '../../src/components/SyncStatusIndicator';
 import useSyncStatus from '../../src/hooks/useSyncStatus';
 import { useAuth } from '@/src/components/AuthProvider';
+import { webClassNameProps, combineStyles } from '@/src/utils/webStyles';
 
 // Separate dialog component for web to avoid Portal issues
 interface ResetDialogProps {
@@ -26,31 +27,15 @@ const WebResetDialog: React.FC<ResetDialogProps> = ({ visible, onDismiss, onRese
   if (!visible) return null;
   
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    }}>
-      <Surface style={{
-        width: 300,
-        borderRadius: 8,
-        padding: 16,
-        backgroundColor: theme.colors.surface,
-      }}>
-        <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Reset App Data</Text>
-        <Text style={{ marginBottom: 24 }}>
+    <div className="modal-overlay">
+      <Surface style={combineStyles({ backgroundColor: theme.colors.surface }, 'modal-content')}>
+        <Text style={combineStyles({}, 'modal-title')}>Reset App Data</Text>
+        <Text style={combineStyles({}, 'modal-message')}>
           This will permanently delete all your tasks, projects, areas, and settings.
           This action cannot be undone.
         </Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-          <Button onPress={onDismiss} style={{ marginRight: 8 }}>Cancel</Button>
+        <View style={combineStyles({}, 'modal-actions')}>
+          <Button onPress={onDismiss} style={combineStyles({}, 'modal-cancel-button')}>Cancel</Button>
           <Button onPress={onReset} textColor={theme.colors.error}>Reset</Button>
         </View>
       </Surface>
