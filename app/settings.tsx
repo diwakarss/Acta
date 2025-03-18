@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, Platform } from 'react-native';
+import { StyleSheet, View, ScrollView, Platform, Linking } from 'react-native';
 import { Text, List, Switch, useTheme, Divider } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { useTheme as useAppTheme, ThemeMode } from '../src/hooks';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@/src/components/AuthProvider';
 
 export default function SettingsScreen() {
-  const router = useRouter();
   const theme = useTheme();
   const { 
     themeSettings, 
@@ -14,40 +15,55 @@ export default function SettingsScreen() {
     setAccentColor, 
     toggleTrueBlack 
   } = useAppTheme();
+  const { user } = useAuth();
   
   // Navigate to theme settings
   const handleThemePress = () => {
-    router.push('/settings/theme');
+    router.push({pathname: '/settings/theme'});
   };
   
   // Navigate to notification settings
   const handleNotificationsPress = () => {
-    router.push('/settings/notifications');
+    router.push({pathname: '/settings/notifications'});
   };
   
   // Navigate to widget settings
   const handleWidgetsPress = () => {
-    router.push('/settings/widgets');
+    router.push({pathname: '/settings/widgets'});
   };
   
   // Navigate to calendar settings
   const handleCalendarPress = () => {
-    router.push('/settings/calendar');
+    router.push({pathname: '/settings/calendar'});
   };
   
   // Navigate to email settings
   const handleEmailPress = () => {
-    router.push('/settings/email');
+    router.push({pathname: '/settings/email'});
   };
   
   // Navigate to shortcuts settings
   const handleShortcutsPress = () => {
-    router.push('/settings/shortcuts');
+    router.push({pathname: '/settings/shortcuts'});
   };
   
   // Navigate to about screen
   const handleAboutPress = () => {
-    router.push('/settings/about');
+    router.push({pathname: '/settings/about'});
+  };
+  
+  const handleAccountPress = () => {
+    router.push({pathname: '/settings/account'});
+  };
+  
+  const handlePrivacyPress = () => {
+    // Open privacy policy website
+    Linking.openURL('https://www.example.com/privacy');
+  };
+  
+  const handleHelpPress = () => {
+    // Open help website
+    Linking.openURL('https://www.example.com/help');
   };
   
   return (
@@ -58,79 +74,117 @@ export default function SettingsScreen() {
             Settings
           </Text>
           
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              Appearance
-            </Text>
+          <List.Section>
+            <List.Subheader>Account</List.Subheader>
+            
             <List.Item
-              title="Theme"
-              description={`${themeSettings.mode === 'system' ? 'System' : themeSettings.mode === 'dark' ? 'Dark' : 'Light'} mode`}
-              left={props => <List.Icon {...props} icon="theme-light-dark" />}
+              title="Account Settings"
+              description={user?.email || "Manage your account"}
+              left={props => <List.Icon {...props} icon="account" />}
+              right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
+              onPress={handleAccountPress}
+            />
+            
+            <Divider />
+          </List.Section>
+          
+          <List.Section>
+            <List.Subheader>Appearance</List.Subheader>
+            
+            <List.Item
+              title="Theme Settings"
+              description="Dark mode, colors, and fonts"
+              left={props => <List.Icon {...props} icon="palette" />}
+              right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
               onPress={handleThemePress}
             />
-          </View>
+            
+            <Divider />
+          </List.Section>
           
-          <Divider />
-          
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              Notifications
-            </Text>
+          <List.Section>
+            <List.Subheader>Notifications</List.Subheader>
+            
             <List.Item
-              title="Notifications"
-              description="Configure reminders and alerts"
-              left={props => <List.Icon {...props} icon="bell-outline" />}
+              title="Notification Settings"
+              description="Configure how you receive notifications"
+              left={props => <List.Icon {...props} icon="bell" />}
+              right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
               onPress={handleNotificationsPress}
             />
-          </View>
+            
+            <Divider />
+          </List.Section>
           
-          <Divider />
-          
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              Integrations
-            </Text>
+          <List.Section>
+            <List.Subheader>Integrations</List.Subheader>
+            
             <List.Item
-              title="Widgets"
-              description="Manage home screen widgets"
-              left={props => <List.Icon {...props} icon="widgets-outline" />}
-              onPress={handleWidgetsPress}
-            />
-            <List.Item
-              title="Calendar"
-              description="Sync with external calendars"
-              left={props => <List.Icon {...props} icon="calendar-sync-outline" />}
-              onPress={handleCalendarPress}
-            />
-            <List.Item
-              title="Email"
-              description="Configure email-to-task settings"
-              left={props => <List.Icon {...props} icon="email-outline" />}
+              title="Email Settings"
+              description="Configure email-to-task conversion"
+              left={props => <List.Icon {...props} icon="email" />}
+              right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
               onPress={handleEmailPress}
             />
+            
+            <Divider />
+            
+            <List.Item
+              title="Calendar Settings"
+              description="Sync with Google and Apple Calendar"
+              left={props => <List.Icon {...props} icon="calendar" />}
+              right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
+              onPress={handleCalendarPress}
+            />
+            
+            <Divider />
+            
             {Platform.OS === 'ios' && (
-              <List.Item
-                title="Siri Shortcuts"
-                description="Add voice commands for common actions"
-                left={props => <List.Icon {...props} icon="microphone" />}
-                onPress={handleShortcutsPress}
-              />
+              <>
+                <List.Item
+                  title="Siri Shortcuts"
+                  description="Set up voice commands for quick actions"
+                  left={props => <List.Icon {...props} icon="microphone" />}
+                  right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
+                  onPress={handleShortcutsPress}
+                />
+                
+                <Divider />
+              </>
             )}
-          </View>
+          </List.Section>
           
-          <Divider />
-          
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              About
-            </Text>
+          <List.Section>
+            <List.Subheader>About</List.Subheader>
+            
             <List.Item
               title="About Acta"
               description="Version 1.0.0"
-              left={props => <List.Icon {...props} icon="information-outline" />}
+              left={props => <List.Icon {...props} icon="information" />}
+              right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
               onPress={handleAboutPress}
             />
-          </View>
+            
+            <Divider />
+            
+            <List.Item
+              title="Privacy Policy"
+              description="View our privacy policy"
+              left={props => <List.Icon {...props} icon="shield" />}
+              right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
+              onPress={handlePrivacyPress}
+            />
+            
+            <Divider />
+            
+            <List.Item
+              title="Help & Support"
+              description="Get help using Acta"
+              left={props => <List.Icon {...props} icon="help-circle" />}
+              right={props => <Ionicons name="chevron-forward" size={24} color={theme.colors.onSurface} />}
+              onPress={handleHelpPress}
+            />
+          </List.Section>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,11 +1,48 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MD3DarkTheme, MD3LightTheme, adaptNavigationTheme } from 'react-native-paper';
+import { MD3DarkTheme, MD3LightTheme, adaptNavigationTheme, configureFonts } from 'react-native-paper';
 import { DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native';
-import { ColorSchemeName } from 'react-native';
+import { ColorSchemeName, Platform } from 'react-native';
 
 // Import cloud sync utilities
 import cloudSync from '../utils/cloudSync';
+
+// Define only the missing font variants 
+const fontConfig = {
+  labelLarge: {
+    fontFamily: Platform.select({
+      web: 'Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif',
+      ios: 'System',
+      default: 'sans-serif-medium',
+    }),
+    fontSize: 14,
+    fontWeight: '500' as '500',
+    letterSpacing: 0.1,
+    lineHeight: 20,
+  },
+  labelMedium: {
+    fontFamily: Platform.select({
+      web: 'Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif',
+      ios: 'System',
+      default: 'sans-serif-medium',
+    }),
+    fontSize: 12,
+    fontWeight: '500' as '500',
+    letterSpacing: 0.5,
+    lineHeight: 16,
+  },
+  labelSmall: {
+    fontFamily: Platform.select({
+      web: 'Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif',
+      ios: 'System',
+      default: 'sans-serif-medium',
+    }),
+    fontSize: 11,
+    fontWeight: '500' as '500',
+    letterSpacing: 0.5,
+    lineHeight: 16,
+  },
+};
 
 // Adapt navigation theme to work with React Native Paper
 const { LightTheme, DarkTheme } = adaptNavigationTheme({
@@ -17,6 +54,7 @@ const { LightTheme, DarkTheme } = adaptNavigationTheme({
 const CustomLightTheme = {
   ...MD3LightTheme,
   ...LightTheme,
+  fonts: configureFonts({config: fontConfig}),
   colors: {
     ...MD3LightTheme.colors,
     ...LightTheme.colors,
@@ -43,6 +81,7 @@ const CustomLightTheme = {
 const CustomDarkTheme = {
   ...MD3DarkTheme,
   ...DarkTheme,
+  fonts: configureFonts({config: fontConfig}),
   colors: {
     ...MD3DarkTheme.colors,
     ...DarkTheme.colors,

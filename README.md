@@ -64,8 +64,9 @@ EXPO_PUBLIC_AWS_SES_REGION=us-east-1
 EXPO_PUBLIC_AWS_SES_ACCESS_KEY=your_aws_access_key_here
 EXPO_PUBLIC_AWS_SES_SECRET_KEY=your_aws_secret_key_here
 
-# Push Notifications
-EXPO_PUBLIC_FCM_SERVER_KEY=your_firebase_cloud_messaging_server_key_here
+# Note: Push notifications use Firebase Cloud Messaging API (V1)
+# which does not require a server key. Configuration is handled through
+# Firebase project settings and expo-notifications.
 ```
 
 ### Setting up Firebase
@@ -74,14 +75,18 @@ EXPO_PUBLIC_FCM_SERVER_KEY=your_firebase_cloud_messaging_server_key_here
 2. Add a Web App to your Firebase project
 3. Enable Authentication with Email/Password and Google Sign-In
 4. Create a Firestore database
-5. Copy the Firebase configuration values to your `.env` file
+5. For Cloud Messaging (Push Notifications):
+   - Go to Project Settings > Cloud Messaging
+   - Make sure Firebase Cloud Messaging API (V1) is enabled
+   - For web push, generate a Web Push certificate
+6. Copy the Firebase configuration values to your `.env` file
 
 ### Running the App
 
 Start the development server:
 
 ```
-expo start
+npx expo start
 ```
 
 This will open Expo DevTools in your browser. You can run the app on:
