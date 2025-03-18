@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, SafeAreaView, TouchableOpacity, Alert, Linking } from 'react-native';
-import { Text, useTheme, List, Switch, Divider, Button, Dialog, Portal } from 'react-native-paper';
+import React, { useState, useMemo, useCallback } from 'react';
+import { StyleSheet, View, ScrollView, SafeAreaView, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
+import { Text, useTheme, List, Switch, Divider, Button, Dialog, Portal, Modal, Surface } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
@@ -8,6 +8,89 @@ import { router } from 'expo-router';
 import useThemeStore from '../../src/store/themeStore';
 import useTaskStore from '../../src/store/taskStore';
 import useNotificationStore from '../../src/store/notificationStore';
+import SyncStatusIndicator from '../../src/components/SyncStatusIndicator';
+import useSyncStatus from '../../src/hooks/useSyncStatus';
+
+// Separate dialog component for web to avoid Portal issues
+interface ResetDialogProps {
+  visible: boolean;
+  onDismiss: () => void;
+  onReset: () => Promise<void>;
+}
+
+// Web-specific dialog implementation that doesn't use Portal
+const WebResetDialog: React.FC<ResetDialogProps> = ({ visible, onDismiss, onReset }) => {
+  const theme = useTheme();
+  
+  if (!visible) return null;
+  
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    }}>
+      <Surface style={{
+        width: 300,
+        borderRadius: 8,
+        padding: 16,
+        backgroundColor: theme.colors.surface,
+      }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Reset App Data</Text>
+        <Text style={{ marginBottom: 24 }}>
+          This will permanently delete all your tasks, projects, areas, and settings.
+          This action cannot be undone.
+        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+          <Button onPress={onDismiss} style={{ marginRight: 8 }}>Cancel</Button>
+          <Button onPress={onReset} textColor={theme.colors.error}>Reset</Button>
+        </View>
+      </Surface>
+    </div>
+  );
+};
+
+// Native-specific dialog using React Native Paper's Dialog
+const NativeResetDialog: React.FC<ResetDialogProps> = ({ visible, onDismiss, onReset }) => {
+  const theme = useTheme();
+  
+  return (
+    <Portal>
+      <Dialog
+        visible={visible}
+        onDismiss={onDismiss}
+      >
+        <Dialog.Title>Reset App Data</Dialog.Title>
+        <Dialog.Content>
+          <Text>
+            This will permanently delete all your tasks, projects, areas, and settings.
+            This action cannot be undone.
+          </Text>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={onDismiss}>Cancel</Button>
+          <Button onPress={onReset} textColor={theme.colors.error}>Reset</Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
+  );
+};
+
+// Choose the appropriate dialog based on platform
+const ResetDialog = Platform.OS === 'web' ? WebResetDialog : NativeResetDialog;
+
+// Memoize the reset dialog to prevent unnecessary re-renders
+const MemoizedResetDialog = React.memo(ResetDialog);
+
+// Memoize SyncStatusIndicator to prevent unnecessary re-renders
+const MemoizedSyncIndicator = React.memo(SyncStatusIndicator);
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -15,8 +98,40 @@ export default function SettingsScreen() {
   const checkNotificationPermissions = useNotificationStore(state => state.checkPermissions);
   const requestNotificationPermissions = useNotificationStore(state => state.requestPermissions);
   
+  // Get sync status but don't use it directly in JSX - use memoized values instead
+  const { status, lastSynced, isOnline, forceSync } = useSyncStatus();
+  
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [isResetDialogVisible, setIsResetDialogVisible] = useState(false);
+  
+  // Memoize derived values to prevent unnecessary rerenders 
+  const syncDescription = useMemo(() => 
+    isOnline ? "You are currently online" : "You are currently offline", 
+  [isOnline]);
+  
+  const syncIcon = useMemo(() => 
+    isOnline ? "wifi" : "wifi-off", 
+  [isOnline]);
+  
+  // Memoize handlers
+  const handleManualSync = useCallback(async () => {
+    if (!isOnline) {
+      Alert.alert(
+        'Offline',
+        'You are currently offline. Please connect to the internet to sync your data.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    
+    try {
+      await forceSync();
+      Alert.alert('Success', 'Data synchronized successfully.');
+    } catch (error) {
+      console.error('Error syncing data:', error);
+      Alert.alert('Sync Error', 'Failed to synchronize data. Please try again later.');
+    }
+  }, [isOnline, forceSync]);
   
   // Check notification permissions
   React.useEffect(() => {
@@ -29,17 +144,17 @@ export default function SettingsScreen() {
   }, []);
   
   // Handle theme toggle
-  const handleThemeToggle = () => {
+  const handleThemeToggle = useCallback(() => {
     toggleTheme();
-  };
+  }, [toggleTheme]);
   
   // Handle system theme toggle
-  const handleSystemThemeToggle = (value: boolean) => {
+  const handleSystemThemeToggle = useCallback((value: boolean) => {
     setUseSystemTheme(value);
-  };
+  }, [setUseSystemTheme]);
   
   // Handle notifications toggle
-  const handleNotificationsToggle = async () => {
+  const handleNotificationsToggle = useCallback(async () => {
     if (notificationsEnabled) {
       // Can't revoke permissions programmatically, so just show instructions
       Alert.alert(
@@ -66,195 +181,248 @@ export default function SettingsScreen() {
         );
       }
     }
-  };
+  }, [notificationsEnabled, requestNotificationPermissions]);
+  
+  // Handle dialog visibility
+  const showResetDialog = useCallback(() => {
+    setIsResetDialogVisible(true);
+  }, []);
+  
+  const hideResetDialog = useCallback(() => {
+    setIsResetDialogVisible(false);
+  }, []);
   
   // Handle reset app data
-  const handleResetAppData = async () => {
+  const handleResetAppData = useCallback(async () => {
     try {
       // Clear AsyncStorage
       await AsyncStorage.clear();
       
-      // Reload the app
-      Alert.alert(
-        'Data Reset',
-        'All app data has been reset. Please restart the app for changes to take effect.',
-        [{ text: 'OK' }]
-      );
-      
+      // Hide dialog first to avoid state updates during render
       setIsResetDialogVisible(false);
+      
+      // Show alert after dialog is closed
+      setTimeout(() => {
+        Alert.alert(
+          'Data Reset',
+          'All app data has been reset. Please restart the app for changes to take effect.',
+          [{ text: 'OK' }]
+        );
+      }, 100);
+      
     } catch (error) {
       console.error('Error resetting app data:', error);
-      Alert.alert('Error', 'Failed to reset app data. Please try again.');
+      
+      // Hide dialog first
+      setIsResetDialogVisible(false);
+      
+      // Show error after dialog is closed
+      setTimeout(() => {
+        Alert.alert('Error', 'Failed to reset app data. Please try again.');
+      }, 100);
     }
-  };
+  }, []);
+  
+  // Memoize the main content to prevent unnecessary re-renders
+  const mainContent = useMemo(() => (
+    <ScrollView style={styles.scrollView}>
+      <View style={styles.content}>
+        <Text style={[styles.header, { color: theme.colors.onBackground }]}>Settings</Text>
+        
+        {/* Appearance Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+            Appearance
+          </Text>
+          
+          <List.Item
+            title="Use System Theme"
+            description="Follow your device's theme settings"
+            left={props => <List.Icon {...props} icon="theme-light-dark" />}
+            right={props => (
+              <Switch
+                value={useSystemTheme}
+                onValueChange={handleSystemThemeToggle}
+                color={theme.colors.primary}
+              />
+            )}
+          />
+          
+          {!useSystemTheme && (
+            <List.Item
+              title="Dark Mode"
+              description="Use dark theme"
+              left={props => <List.Icon {...props} icon={isDarkMode ? 'weather-night' : 'white-balance-sunny'} />}
+              right={props => (
+                <Switch
+                  value={isDarkMode}
+                  onValueChange={handleThemeToggle}
+                  color={theme.colors.primary}
+                />
+              )}
+            />
+          )}
+        </View>
+        
+        <Divider style={styles.divider} />
+        
+        {/* Notifications Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+            Notifications
+          </Text>
+          
+          <List.Item
+            title="Enable Notifications"
+            description="Receive reminders for your tasks"
+            left={props => <List.Icon {...props} icon="bell" />}
+            right={props => (
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleNotificationsToggle}
+                color={theme.colors.primary}
+              />
+            )}
+          />
+        </View>
+        
+        <Divider style={styles.divider} />
+        
+        {/* Sync Status Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+            Data Synchronization
+          </Text>
+          
+          <View style={styles.syncStatusContainer}>
+            <MemoizedSyncIndicator showLastSynced={true} />
+          </View>
+          
+          <List.Item
+            title="Manual Sync"
+            description="Sync your data with the cloud"
+            left={props => <List.Icon {...props} icon="cloud-sync" />}
+            onPress={handleManualSync}
+            disabled={status === 'syncing' || !isOnline}
+          />
+          
+          <List.Item
+            title="Offline Mode"
+            description={syncDescription}
+            left={props => <List.Icon {...props} icon={syncIcon} />}
+          />
+        </View>
+        
+        <Divider style={styles.divider} />
+        
+        {/* Integrations Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+            Integrations
+          </Text>
+          
+          <List.Item
+            title="Email Settings"
+            description="Configure email-to-task conversion"
+            left={props => <List.Icon {...props} icon="email" />}
+            right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => router.push('/settings/email')}
+          />
+          
+          <List.Item
+            title="Calendar Integration"
+            description="Sync tasks with your calendar"
+            left={props => <List.Icon {...props} icon="calendar" />}
+            right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => {
+              // TODO: Navigate to calendar settings
+              Alert.alert('Coming Soon', 'Calendar settings will be available in a future update.');
+            }}
+          />
+          
+          <List.Item
+            title="Widgets"
+            description="Manage home screen widgets"
+            left={props => <List.Icon {...props} icon="widgets" />}
+            right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => router.push('/widgets')}
+          />
+        </View>
+        
+        <Divider style={styles.divider} />
+        
+        {/* Data Management Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+            Data Management
+          </Text>
+          
+          <List.Item
+            title="Reset App Data"
+            description="Delete all tasks, projects, and settings"
+            left={props => <List.Icon {...props} icon="delete" color={theme.colors.error} />}
+            onPress={showResetDialog}
+          />
+        </View>
+        
+        <Divider style={styles.divider} />
+        
+        {/* About Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+            About
+          </Text>
+          
+          <List.Item
+            title="Version"
+            description="1.0.0"
+            left={props => <List.Icon {...props} icon="information" />}
+          />
+          
+          <List.Item
+            title="Privacy Policy"
+            left={props => <List.Icon {...props} icon="shield" />}
+            onPress={() => {
+              // TODO: Open privacy policy
+            }}
+          />
+          
+          <List.Item
+            title="Terms of Service"
+            left={props => <List.Icon {...props} icon="file-document" />}
+            onPress={() => {
+              // TODO: Open terms of service
+            }}
+          />
+        </View>
+      </View>
+    </ScrollView>
+  ), [
+    theme, 
+    handleManualSync, 
+    handleNotificationsToggle, 
+    handleSystemThemeToggle, 
+    handleThemeToggle,
+    showResetDialog,
+    isDarkMode,
+    useSystemTheme,
+    notificationsEnabled,
+    status,
+    isOnline,
+    syncDescription,
+    syncIcon
+  ]);
   
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.content}>
-          <Text style={[styles.header, { color: theme.colors.onBackground }]}>Settings</Text>
-          
-          {/* Appearance Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              Appearance
-            </Text>
-            
-            <List.Item
-              title="Use System Theme"
-              description="Follow your device's theme settings"
-              left={props => <List.Icon {...props} icon="theme-light-dark" />}
-              right={props => (
-                <Switch
-                  value={useSystemTheme}
-                  onValueChange={handleSystemThemeToggle}
-                  color={theme.colors.primary}
-                />
-              )}
-            />
-            
-            {!useSystemTheme && (
-              <List.Item
-                title="Dark Mode"
-                description="Use dark theme"
-                left={props => <List.Icon {...props} icon={isDarkMode ? 'weather-night' : 'white-balance-sunny'} />}
-                right={props => (
-                  <Switch
-                    value={isDarkMode}
-                    onValueChange={handleThemeToggle}
-                    color={theme.colors.primary}
-                  />
-                )}
-              />
-            )}
-          </View>
-          
-          <Divider style={styles.divider} />
-          
-          {/* Notifications Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              Notifications
-            </Text>
-            
-            <List.Item
-              title="Enable Notifications"
-              description="Receive reminders for your tasks"
-              left={props => <List.Icon {...props} icon="bell" />}
-              right={props => (
-                <Switch
-                  value={notificationsEnabled}
-                  onValueChange={handleNotificationsToggle}
-                  color={theme.colors.primary}
-                />
-              )}
-            />
-          </View>
-          
-          <Divider style={styles.divider} />
-          
-          {/* Integrations Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              Integrations
-            </Text>
-            
-            <List.Item
-              title="Email Settings"
-              description="Configure email-to-task conversion"
-              left={props => <List.Icon {...props} icon="email" />}
-              right={props => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => router.push('/settings/email')}
-            />
-            
-            <List.Item
-              title="Calendar Integration"
-              description="Sync tasks with your calendar"
-              left={props => <List.Icon {...props} icon="calendar" />}
-              right={props => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => {
-                // TODO: Navigate to calendar settings
-                Alert.alert('Coming Soon', 'Calendar settings will be available in a future update.');
-              }}
-            />
-            
-            <List.Item
-              title="Widgets"
-              description="Manage home screen widgets"
-              left={props => <List.Icon {...props} icon="widgets" />}
-              right={props => <List.Icon {...props} icon="chevron-right" />}
-              onPress={() => router.push('/widgets')}
-            />
-          </View>
-          
-          <Divider style={styles.divider} />
-          
-          {/* Data Management Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              Data Management
-            </Text>
-            
-            <List.Item
-              title="Reset App Data"
-              description="Delete all tasks, projects, and settings"
-              left={props => <List.Icon {...props} icon="delete" color={theme.colors.error} />}
-              onPress={() => setIsResetDialogVisible(true)}
-            />
-          </View>
-          
-          <Divider style={styles.divider} />
-          
-          {/* About Section */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
-              About
-            </Text>
-            
-            <List.Item
-              title="Version"
-              description="1.0.0"
-              left={props => <List.Icon {...props} icon="information" />}
-            />
-            
-            <List.Item
-              title="Privacy Policy"
-              left={props => <List.Icon {...props} icon="shield" />}
-              onPress={() => {
-                // TODO: Open privacy policy
-              }}
-            />
-            
-            <List.Item
-              title="Terms of Service"
-              left={props => <List.Icon {...props} icon="file-document" />}
-              onPress={() => {
-                // TODO: Open terms of service
-              }}
-            />
-          </View>
-        </View>
-      </ScrollView>
+      {mainContent}
       
-      {/* Reset App Data Dialog */}
-      <Portal>
-        <Dialog
-          visible={isResetDialogVisible}
-          onDismiss={() => setIsResetDialogVisible(false)}
-        >
-          <Dialog.Title>Reset App Data</Dialog.Title>
-          <Dialog.Content>
-            <Text>
-              This will permanently delete all your tasks, projects, areas, and settings.
-              This action cannot be undone.
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setIsResetDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleResetAppData} textColor={theme.colors.error}>Reset</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+      {/* Use the platform-specific dialog */}
+      <MemoizedResetDialog 
+        visible={isResetDialogVisible}
+        onDismiss={hideResetDialog}
+        onReset={handleResetAppData}
+      />
     </SafeAreaView>
   );
 }
@@ -275,7 +443,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
@@ -285,4 +453,8 @@ const styles = StyleSheet.create({
   divider: {
     marginVertical: 16,
   },
+  syncStatusContainer: {
+    marginVertical: 10,
+    paddingHorizontal: 16,
+  }
 }); 

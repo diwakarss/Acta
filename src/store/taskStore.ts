@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
+import { StoreApi } from 'zustand';
+import { Platform } from 'react-native';
 
 // Import cloud sync utilities
 import cloudSync from '../utils/cloudSync';
@@ -14,12 +16,20 @@ import {
   Area 
 } from '../types';
 
+// Create a singleton object that maintains the same reference for web
+const stableSyncStatus: { isSyncing: boolean; lastSyncTime: number | null } = {
+  isSyncing: false,
+  lastSyncTime: null
+};
+
 // Define the store state
 interface TaskState {
   tasks: Task[];
   projects: Project[];
   areas: Area[];
   tags: Tag[];
+  isSyncing: boolean;
+  lastSyncTime: number | null;
   
   // Task operations
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -68,6 +78,8 @@ interface TaskState {
   // Storage operations
   initializeState: () => Promise<void>;
   persistState: () => Promise<void>;
+  forceSync: () => Promise<boolean>;
+  getLastSyncStatus: () => { isSyncing: boolean; lastSyncTime: number | null };
 }
 
 // Create the store
@@ -76,6 +88,8 @@ const useTaskStore = create<TaskState>((set, get) => ({
   projects: [],
   areas: [],
   tags: [],
+  isSyncing: false,
+  lastSyncTime: null,
   
   // Task operations
   addTask: (taskData) => {
@@ -523,49 +537,165 @@ const useTaskStore = create<TaskState>((set, get) => ({
     });
   },
   
+  // Get the current sync status - memoized to prevent infinite loops
+  getLastSyncStatus: () => {
+    // Get the current state
+    const state = get();
+    
+    // Use a static object for web platform to prevent reference changes
+    if (Platform.OS === 'web') {
+      // Update values but keep the same reference
+      stableSyncStatus.isSyncing = state.isSyncing;
+      stableSyncStatus.lastSyncTime = state.lastSyncTime;
+      
+      // Return the stable reference
+      return stableSyncStatus;
+    }
+    
+    // For native, return a new object each time
+    return {
+      isSyncing: state.isSyncing,
+      lastSyncTime: state.lastSyncTime
+    };
+  },
+  
+  // Force sync data to the cloud with timeout protection
+  forceSync: async () => {
+    set({ isSyncing: true });
+    
+    try {
+      // For web, add timeout protection
+      if (Platform.OS === 'web') {
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Sync operation timed out')), 5000);
+        });
+        
+        await Promise.race([
+          cloudSync.forceSyncToCloud(),
+          timeoutPromise
+        ]);
+      } else {
+        // For native, proceed normally
+        await cloudSync.forceSyncToCloud();
+      }
+      
+      set({ 
+        isSyncing: false,
+        lastSyncTime: Date.now()
+      });
+      return true;
+    } catch (error) {
+      console.error('Error during force sync:', error);
+      set({ isSyncing: false });
+      return false;
+    }
+  },
+  
   // Storage operations
   initializeState: async () => {
+    set({ isSyncing: true });
+    
     try {
-      // Try to get data through cloud sync merging
-      const tasks = await cloudSync.mergeData('tasks');
-      const projects = await cloudSync.mergeData('projects');
-      const areas = await cloudSync.mergeData('areas');
-      const tags = await cloudSync.mergeData('tags');
-      
-      set({
-        tasks: tasks || [],
-        projects: projects || [],
-        areas: areas || [],
-        tags: tags || []
-      });
-      
-      // Set up real-time syncing for tasks
-      cloudSync.setupCloudSync('tasks', (updatedTasks) => {
-        if (updatedTasks) {
-          set({ tasks: updatedTasks });
+      // First, load data from local storage to ensure quick app startup
+      const loadLocalData = async () => {
+        try {
+          const storedTasks = await AsyncStorage.getItem('tasks');
+          const storedProjects = await AsyncStorage.getItem('projects');
+          const storedAreas = await AsyncStorage.getItem('areas');
+          const storedTags = await AsyncStorage.getItem('tags');
+          
+          // Use local data first for fast startup
+          set({
+            tasks: storedTasks ? JSON.parse(storedTasks) : [],
+            projects: storedProjects ? JSON.parse(storedProjects) : [],
+            areas: storedAreas ? JSON.parse(storedAreas) : [],
+            tags: storedTags ? JSON.parse(storedTags) : []
+          });
+          
+          return {
+            hasLocalData: !!(storedTasks || storedProjects || storedAreas || storedTags)
+          };
+        } catch (localError) {
+          console.error('Error reading from local storage:', localError);
+          return { hasLocalData: false };
         }
-      });
+      };
       
-      // Set up real-time syncing for projects
-      cloudSync.setupCloudSync('projects', (updatedProjects) => {
-        if (updatedProjects) {
-          set({ projects: updatedProjects });
-        }
-      });
+      // First load local data for immediate display
+      const { hasLocalData } = await loadLocalData();
       
-      // Set up real-time syncing for areas
-      cloudSync.setupCloudSync('areas', (updatedAreas) => {
-        if (updatedAreas) {
-          set({ areas: updatedAreas });
+      // Then try to merge with cloud data
+      try {
+        // Process any pending operations first
+        await cloudSync.processSyncQueue();
+        
+        // Try to get data through cloud sync merging
+        const tasks = await cloudSync.mergeData('tasks');
+        const projects = await cloudSync.mergeData('projects');
+        const areas = await cloudSync.mergeData('areas');
+        const tags = await cloudSync.mergeData('tags');
+        
+        set({
+          tasks: tasks || [],
+          projects: projects || [],
+          areas: areas || [],
+          tags: tags || [],
+          lastSyncTime: Date.now()
+        });
+        
+        // Set up real-time syncing for tasks
+        cloudSync.setupCloudSync('tasks', (updatedTasks) => {
+          if (updatedTasks) {
+            set({ 
+              tasks: updatedTasks,
+              lastSyncTime: Date.now()
+            });
+          }
+        });
+        
+        // Set up real-time syncing for projects
+        cloudSync.setupCloudSync('projects', (updatedProjects) => {
+          if (updatedProjects) {
+            set({ 
+              projects: updatedProjects,
+              lastSyncTime: Date.now()
+            });
+          }
+        });
+        
+        // Set up real-time syncing for areas
+        cloudSync.setupCloudSync('areas', (updatedAreas) => {
+          if (updatedAreas) {
+            set({ 
+              areas: updatedAreas,
+              lastSyncTime: Date.now()
+            });
+          }
+        });
+        
+        // Set up real-time syncing for tags
+        cloudSync.setupCloudSync('tags', (updatedTags) => {
+          if (updatedTags) {
+            set({ 
+              tags: updatedTags,
+              lastSyncTime: Date.now()
+            });
+          }
+        });
+      } catch (cloudError) {
+        console.error('Error syncing with cloud:', cloudError);
+        
+        // We already loaded local data, so we can continue using that
+        if (!hasLocalData) {
+          // Initialize with empty arrays as last resort if no local data
+          set({
+            tasks: [],
+            projects: [],
+            areas: [],
+            tags: []
+          });
         }
-      });
-      
-      // Set up real-time syncing for tags
-      cloudSync.setupCloudSync('tags', (updatedTags) => {
-        if (updatedTags) {
-          set({ tags: updatedTags });
-        }
-      });
+      }
     } catch (error) {
       console.error('Error initializing task store:', error);
       
@@ -592,6 +722,8 @@ const useTaskStore = create<TaskState>((set, get) => ({
           tags: []
         });
       }
+    } finally {
+      set({ isSyncing: false });
     }
   },
   
@@ -599,17 +731,23 @@ const useTaskStore = create<TaskState>((set, get) => ({
     try {
       const { tasks, projects, areas, tags } = get();
       
-      // Persist to local storage
-      await AsyncStorage.setItem('tasks', JSON.stringify(tasks));
-      await AsyncStorage.setItem('projects', JSON.stringify(projects));
-      await AsyncStorage.setItem('areas', JSON.stringify(areas));
-      await AsyncStorage.setItem('tags', JSON.stringify(tags));
+      // Optimistically update local state immediately
+      await Promise.all([
+        AsyncStorage.setItem('tasks', JSON.stringify(tasks)),
+        AsyncStorage.setItem('projects', JSON.stringify(projects)),
+        AsyncStorage.setItem('areas', JSON.stringify(areas)),
+        AsyncStorage.setItem('tags', JSON.stringify(tags))
+      ]);
       
-      // Sync to cloud
-      await cloudSync.syncToCloud('tasks', tasks);
-      await cloudSync.syncToCloud('projects', projects);
-      await cloudSync.syncToCloud('areas', areas);
-      await cloudSync.syncToCloud('tags', tags);
+      // Then try to sync to cloud in background
+      // We don't await these because we want to return quickly to keep the UI responsive
+      cloudSync.syncToCloud('tasks', tasks);
+      cloudSync.syncToCloud('projects', projects);
+      cloudSync.syncToCloud('areas', areas);
+      cloudSync.syncToCloud('tags', tags);
+      
+      // Update last sync time once all sync operations have been dispatched
+      set({ lastSyncTime: Date.now() });
     } catch (error) {
       console.error('Error persisting task store:', error);
     }
