@@ -10,6 +10,7 @@ import useTaskStore from '../../src/store/taskStore';
 import useNotificationStore from '../../src/store/notificationStore';
 import SyncStatusIndicator from '../../src/components/SyncStatusIndicator';
 import useSyncStatus from '../../src/hooks/useSyncStatus';
+import { useAuth } from '@/src/components/AuthProvider';
 
 // Separate dialog component for web to avoid Portal issues
 interface ResetDialogProps {
@@ -103,6 +104,9 @@ export default function SettingsScreen() {
   
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [isResetDialogVisible, setIsResetDialogVisible] = useState(false);
+  
+  // Add auth context
+  const { user, signOut } = useAuth();
   
   // Memoize derived values to prevent unnecessary rerenders 
   const syncDescription = useMemo(() => 
@@ -223,6 +227,21 @@ export default function SettingsScreen() {
     }
   }, []);
   
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      Alert.alert('Success', 'You have been signed out');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+  
+  // Navigate to login screen
+  const goToLogin = () => {
+    router.push('/auth/login');
+  };
+  
   // Memoize the main content to prevent unnecessary re-renders
   const mainContent = useMemo(() => (
     <ScrollView style={styles.scrollView}>
@@ -315,6 +334,47 @@ export default function SettingsScreen() {
         
         <Divider style={styles.divider} />
         
+        {/* Account Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
+            Account
+          </Text>
+          
+          {user ? (
+            <>
+              <List.Item
+                title="Signed In"
+                description={user.email || 'No email available'}
+                left={props => <List.Icon {...props} icon="account" />}
+              />
+              
+              <List.Item
+                title="Account Details"
+                description="View and manage your account"
+                left={props => <List.Icon {...props} icon="account-details" />}
+                right={props => <List.Icon {...props} icon="chevron-right" />}
+                onPress={() => router.push('/settings/account')}
+              />
+              
+              <List.Item
+                title="Sign Out"
+                description="Log out of your account"
+                left={props => <List.Icon {...props} icon="logout" />}
+                onPress={handleSignOut}
+              />
+            </>
+          ) : (
+            <List.Item
+              title="Sign In"
+              description="Log in or create an account"
+              left={props => <List.Icon {...props} icon="login" />}
+              onPress={goToLogin}
+            />
+          )}
+        </View>
+        
+        <Divider style={styles.divider} />
+        
         {/* Integrations Section */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
@@ -403,6 +463,7 @@ export default function SettingsScreen() {
     handleNotificationsToggle, 
     handleSystemThemeToggle, 
     handleThemeToggle,
+    handleSignOut,
     showResetDialog,
     isDarkMode,
     useSystemTheme,
@@ -410,7 +471,8 @@ export default function SettingsScreen() {
     status,
     isOnline,
     syncDescription,
-    syncIcon
+    syncIcon,
+    user
   ]);
   
   return (

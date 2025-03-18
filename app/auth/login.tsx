@@ -19,7 +19,8 @@ export default function LoginScreen() {
   useEffect(() => {
     // If user is authenticated, redirect to home
     if (user && !isLoading) {
-      router.replace({pathname: '/(tabs)'});
+      console.log('User authenticated, redirecting to home');
+      router.replace('/');
     }
 
     // Pre-fill email if we have one in AsyncStorage
@@ -28,7 +29,7 @@ export default function LoginScreen() {
         setEmail(storedEmail);
       }
     });
-  }, [user, isLoading, router]);
+  }, [user, isLoading]);
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -38,13 +39,24 @@ export default function LoginScreen() {
 
     setIsSubmitting(true);
     try {
+      console.log(`Attempting to ${isLogin ? 'sign in' : 'sign up'} with email: ${email}`);
+      
       if (isLogin) {
         await signIn(email, password);
       } else {
         await signUp(email, password);
+        // Show success message for sign up
+        Alert.alert(
+          'Account Created', 
+          'Your account has been created successfully! You can now sign in.',
+          [{ text: 'OK' }]
+        );
+        // Switch to login view
+        setIsLogin(true);
       }
     } catch (error) {
-      // Error handling is done in the AuthProvider
+      // Error handling is done in the AuthProvider, but we can add UI-specific handling here
+      console.error('Authentication error in login screen:', error);
     } finally {
       setIsSubmitting(false);
     }
