@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Text, useTheme } from 'react-native-paper';
+import { TextInput, Button, Text, useTheme, Divider } from 'react-native-paper';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useAuth } from '@/src/components/AuthProvider';
 
@@ -12,8 +13,9 @@ export default function LoginScreen() {
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [isLogin, setIsLogin] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
 
-  const { signIn, signUp, user, isLoading } = useAuth();
+  const { signIn, signUp, signInWithGoogle, user, isLoading } = useAuth();
   const theme = useTheme();
 
   useEffect(() => {
@@ -70,6 +72,21 @@ export default function LoginScreen() {
     setSecureTextEntry(!secureTextEntry);
   };
 
+  // Handle Google Sign-In
+  const handleGoogleSignIn = async () => {
+    if (isGoogleSigningIn) return;
+    
+    setIsGoogleSigningIn(true);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Error during Google sign in:', error);
+      // Error handling is done in the AuthProvider
+    } finally {
+      setIsGoogleSigningIn(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -119,7 +136,7 @@ export default function LoginScreen() {
           onPress={handleSubmit}
           loading={isSubmitting}
           style={styles.button}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isGoogleSigningIn}
         >
           {isLogin ? 'Sign In' : 'Create Account'}
         </Button>
@@ -128,8 +145,30 @@ export default function LoginScreen() {
           mode="text" 
           onPress={toggleMode}
           style={styles.toggleButton}
+          disabled={isSubmitting || isGoogleSigningIn}
         >
           {isLogin ? 'Need an account? Sign Up' : 'Already have an account? Sign In'}
+        </Button>
+        
+        <View style={styles.dividerContainer}>
+          <Divider style={styles.divider} />
+          <Text style={styles.dividerText}>OR</Text>
+          <Divider style={styles.divider} />
+        </View>
+        
+        <Button
+          mode="outlined"
+          icon={({ size, color }) => (
+            <MaterialCommunityIcons name="google" size={size} color="#4285F4" />
+          )}
+          onPress={handleGoogleSignIn}
+          loading={isGoogleSigningIn}
+          disabled={isSubmitting || isGoogleSigningIn}
+          style={[styles.googleButton, { backgroundColor: 'white' }]}
+          labelStyle={{ color: '#757575' }}
+          contentStyle={{ paddingVertical: 8 }}
+        >
+          Sign in with Google
         </Button>
 
         <View style={styles.devLinks}>
@@ -177,6 +216,22 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   toggleButton: {
+    marginBottom: 24,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16, 
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    opacity: 0.7,
+  },
+  googleButton: {
     marginBottom: 24,
   },
   devLinks: {

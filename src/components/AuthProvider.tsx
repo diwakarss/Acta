@@ -1,16 +1,26 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { 
   getAuth, 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  User
+  User,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithCredential,
+  OAuthProvider
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeApp } from 'firebase/app';
 import Constants from 'expo-constants';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
+import * as Google from 'expo-auth-session/providers/google';
+
+// Configure WebBrowser for auth redirects
+WebBrowser.maybeCompleteAuthSession();
 
 // Get environment variables from Expo's Constants
 const getEnvVariable = (key: string): string => {
@@ -51,6 +61,7 @@ interface AuthContextType {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   error: string | null;
 }
@@ -60,6 +71,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   signIn: async () => {},
   signUp: async () => {},
+  signInWithGoogle: async () => {},
   signOut: async () => {},
   error: null
 });
@@ -216,8 +228,125 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Add Google Sign-In method
+  const signInWithGoogle = async (): Promise<void> => {
+    setError(null);
+    setIsLoading(true);
+    
+    try {
+      console.log('Attempting to sign in with Google');
+      const auth = getAuth();
+      
+      // Check if we have the auth instance
+      if (!auth) {
+        throw new Error('Firebase Auth not initialized');
+      }
+      
+      // Handle platform-specific Google sign-in
+      if (Platform.OS === 'web') {
+        // Web implementation - uses a popup
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        console.log('Google sign in successful for user:', result.user.uid);
+      } else {
+        // Native implementation using Expo AuthSession
+        try {
+          // Get Firebase project ID from config
+          const projectId = firebaseConfig.projectId;
+          if (!projectId) {
+            throw new Error('Firebase project ID is missing from configuration');
+          }
+          
+          // Get Expo client ID for Google auth
+          const expoClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+          const androidClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+          const iosClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+          
+          if (!expoClientId && !androidClientId && !iosClientId) {
+            Alert.alert(
+              'Configuration Error',
+              'Google Sign-In client IDs are not configured. Please check your app config.',
+              [{ text: 'OK' }]
+            );
+            setIsLoading(false);
+            return;
+          }
+          
+          console.log('Starting Google AuthRequest');
+          
+          // Configuration for the AuthRequest
+          const config: AuthSession.AuthRequestConfig = {
+            clientId: Platform.OS === 'android' ? androidClientId : iosClientId,
+            scopes: ['profile', 'email'],
+            redirectUri: AuthSession.makeRedirectUri({
+              scheme: 'acta'
+            })
+          };
+          
+          if (expoClientId) {
+            // @ts-ignore - Add web client ID which may not be in the type definitions
+            config.webClientId = expoClientId;
+          }
+          
+          // Create and prompt the Google auth request
+          const request = new AuthSession.AuthRequest(config);
+          const result = await request.promptAsync(Google.discovery);
+          
+          if (result.type === 'success') {
+            // Got the user token
+            const { id_token } = result.params;
+            
+            // Sign in with the token
+            const credential = GoogleAuthProvider.credential(id_token);
+            const userCredential = await signInWithCredential(auth, credential);
+            console.log('Google sign-in successful for user:', userCredential.user.uid);
+          } else {
+            console.log('Google sign-in was cancelled or failed:', result.type);
+            if (result.type === 'cancel') {
+              throw new Error('Google sign-in was cancelled');
+            } else {
+              throw new Error(`Google sign-in failed: ${result.type}`);
+            }
+          }
+        } catch (error: any) {
+          console.error('Native Google sign-in error:', error);
+          throw error;
+        }
+      }
+    } catch (error: any) {
+      console.error('Google sign in error:', error.code, error.message);
+      
+      // Provide more user-friendly error messages
+      let errorMessage = 'Failed to sign in with Google. Please try again.';
+      
+      if (error.code === 'auth/popup-closed-by-user' || error.message === 'Google sign-in was cancelled') {
+        errorMessage = 'Sign-in was cancelled.';
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = 'Sign-in popup was blocked by your browser. Please allow popups for this website.';
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        errorMessage = 'The sign-in process was cancelled.';
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        errorMessage = 'An account already exists with the same email address but different sign-in credentials.';
+      }
+      
+      setError(errorMessage);
+      Alert.alert('Google Sign-In Error', errorMessage);
+      throw error; // Rethrow to allow callers to handle it if needed
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut, error }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isLoading, 
+      signIn, 
+      signUp, 
+      signInWithGoogle,
+      signOut, 
+      error 
+    }}>
       {children}
     </AuthContext.Provider>
   );
