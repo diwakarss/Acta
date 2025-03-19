@@ -5,6 +5,9 @@
  * These components handle theme settings, notification settings, account settings, etc.
  */
 
+// Export settings components
+// (Currently none moved yet)
+
 // As components are moved here, export them from this barrel file
 // Example: export { default as ThemeSettings } from './ThemeSettings';
 // Example: export { default as NotificationSettings } from './NotificationSettings'; 
