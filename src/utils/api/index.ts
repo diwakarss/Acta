@@ -5,6 +5,7 @@
  * These utilities handle API calls, data transformation, Firebase interactions, etc.
  */
 
-// As utilities are moved here, export them from this barrel file
-// Example: export * from './firebase';
-// Example: export * from './cloudSync'; 
+// Export API utilities
+export * from './firebase';
+export * from './cloudSync';
+export * from './firebaseMessaging'; 
