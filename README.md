@@ -110,6 +110,52 @@ acta/
 └── app.config.js        # Expo configuration
 ```
 
+## Code Organization
+
+The Acta codebase is organized in a structured way to improve maintainability and developer experience:
+
+### Directory Structure
+
+- `/src` - Main source code directory
+  - `/components` - React components
+    - `/ui` - Reusable UI components
+    - `/layout` - Layout components
+    - `/features` - Feature-specific components
+  - `/hooks` - React hooks
+    - `/ui` - UI-related hooks
+    - `/data` - Data management hooks
+    - `/auth` - Authentication hooks
+  - `/store` - State management
+  - `/utils` - Utility functions
+    - `/api` - API interaction utilities
+    - `/platform` - Platform-specific utilities
+    - `/formatting` - Data formatting utilities
+  - `/constants` - Application constants
+  - `/types` - TypeScript type definitions
+- `/app` - Expo Router app directory
+- `/assets` - Static assets
+
+### Import Conventions
+
+Use alias imports with `@/` prefix:
+
+```tsx
+// Good
+import { Button } from '@/src/components/ui';
+import { ROUTES } from '@/src/constants';
+
+// Avoid
+import { Button } from '../../../components/ui';
+```
+
+### Component Organization
+
+Components are organized by their purpose:
+
+1. **UI Components**: Reusable UI elements with no business logic
+2. **Layout Components**: Structural components for layout
+3. **Feature Components**: Components specific to a feature or domain
+
 ## Contributing
 
 1. Fork the repository
