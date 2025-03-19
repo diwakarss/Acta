@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import useEmailStore from '../../src/store/emailStore';
-import useTaskStore from '../../src/store/taskStore';
+import useEmailStore from '@/src/store/emailStore';
+import useTaskStore from '@/src/store/taskStore';
 
 // Define the EmailToTaskRule interface
 interface EmailToTaskRule {
@@ -147,7 +147,7 @@ export default function EmailSettingsScreen() {
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => {
-                  Alert.prompt(
+                  showPrompt(
                     'Add Email Address',
                     'Enter an email address to match',
                     (text) => {
@@ -183,7 +183,7 @@ export default function EmailSettingsScreen() {
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => {
-                  Alert.prompt(
+                  showPrompt(
                     'Add Subject Text',
                     'Enter text to match in the subject',
                     (text) => {
@@ -219,7 +219,7 @@ export default function EmailSettingsScreen() {
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={() => {
-                  Alert.prompt(
+                  showPrompt(
                     'Add Body Text',
                     'Enter text to match in the body',
                     (text) => {
@@ -371,7 +371,7 @@ export default function EmailSettingsScreen() {
   
   return (
     <ScrollView style={styles.container}>
-      <Stack.Screen options={{ title: 'Email Settings' }} />
+      <Stack.Screen name="email" options={{ title: 'Email Settings' }} />
       
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Email to Task</Text>
@@ -623,4 +623,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-}); 
+});
+
+// Replace Alert.prompt calls with a cross-platform solution
+const showPrompt = (title: string, message: string, callback: (text: string) => void) => {
+  if (Platform.OS === 'ios') {
+    Alert.prompt(title, message, callback);
+  } else {
+    // On Android, we'd need a custom dialog or third-party library
+    // For now, just show a regular alert explaining the limitation
+    Alert.alert(
+      'Not Available',
+      'This feature requires input dialogs which are not supported on this platform.',
+      [{ text: 'OK' }]
+    );
+  }
+}; 

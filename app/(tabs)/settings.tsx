@@ -5,13 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
-import useThemeStore from '../../src/store/themeStore';
-import useTaskStore from '../../src/store/taskStore';
-import useNotificationStore from '../../src/store/notificationStore';
-import SyncStatusIndicator from '../../src/components/SyncStatusIndicator';
-import useSyncStatus from '../../src/hooks/useSyncStatus';
-import { useAuth } from '@/src/components/AuthProvider';
-import { webClassNameProps, combineStyles } from '@/src/utils/webStyles';
+import useThemeStore from '@/src/store/themeStore';
+import useTaskStore from '@/src/store/taskStore';
+import useNotificationStore from '@/src/store/notificationStore';
+import SyncStatusIndicator from '@/src/components/features/sync/SyncStatusIndicator';
+import useSyncStatus from '@/src/hooks/ui/useSyncStatus';
+import { useAuth } from '@/src/components/features/auth/AuthProvider';
+import { webClassNameProps, combineStyles } from '@/src/utils/platform/webStyles';
 
 // Separate dialog component for web to avoid Portal issues
 interface ResetDialogProps {

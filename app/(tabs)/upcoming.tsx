@@ -4,10 +4,10 @@ import { Text, useTheme, FAB, Modal, Portal, Divider } from 'react-native-paper'
 import { useFocusEffect } from '@react-navigation/native';
 import { format, isToday, isTomorrow, addDays, isSameDay, isThisWeek, isThisMonth } from 'date-fns';
 
-import TaskList from '../../components/TaskList';
-import TaskForm from '../../components/TaskForm';
-import useTaskStore from '../../src/store/taskStore';
-import { Task } from '../../src/types';
+import TaskList from '@/src/components/features/tasks/TaskList';
+import TaskForm from '@/src/components/features/tasks/TaskForm';
+import useTaskStore from '@/src/store/taskStore';
+import { Task } from '@/src/types';
 
 export default function UpcomingScreen() {
   const theme = useTheme();

@@ -9,21 +9,21 @@ import 'react-native-reanimated';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { DarkTheme, DefaultTheme } from '@react-navigation/native';
-import { initializeFirebase } from '../src/utils/firebase';
+import { initializeFirebase } from '@/src/utils/api/firebase';
 import Constants from 'expo-constants';
 
 // Import web styles utility to ensure CSS is loaded for web platform
-import '@/src/utils/webStyles';
+import '@/src/utils/platform/webStyles';
 
 // Import actual stores using the @ path alias
 import useThemeStore from '@/src/store/themeStore';
 import useTaskStore from '@/src/store/taskStore';
 // Import cloud sync utility
-import cloudSync from '@/src/utils/cloudSync';
+import cloudSync from '@/src/utils/api/cloudSync';
 // Import Firebase messaging utility
-import firebaseMessaging from '@/src/utils/firebaseMessaging';
+import firebaseMessaging from '@/src/utils/api/firebaseMessaging';
 // Import AuthProvider
-import { AuthProvider, useAuth } from '@/src/components/AuthProvider';
+import { AuthProvider, useAuth } from '@/src/components/features/auth/AuthProvider';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();

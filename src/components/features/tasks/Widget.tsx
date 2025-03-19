@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Task } from '../types';
+import { Task } from '@/src/types';
 
 type WidgetSize = 'small' | 'medium' | 'large';
 

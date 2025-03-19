@@ -6,7 +6,7 @@
  */
 
 // Export auth hooks
-// (Currently none moved yet)
+export { useAuth } from '@/src/components/features/auth/AuthProvider';
 
 // As hooks are moved here, export them from this barrel file
 // Example: export { default as useAuth } from './useAuth'; 

@@ -5,7 +5,7 @@ import { DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultThem
 import { ColorSchemeName, Platform } from 'react-native';
 
 // Import cloud sync utilities
-import cloudSync from '../utils/cloudSync';
+import cloudSync from '@/src/utils/api/cloudSync';
 
 // Define only the missing font variants 
 const fontConfig = {

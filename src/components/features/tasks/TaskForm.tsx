@@ -22,9 +22,9 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 
-import { Task, ChecklistItem, Tag } from '../src/types';
-import useTaskStore from '../src/store/taskStore';
-import useNotificationStore from '../src/store/notificationStore';
+import { Task, ChecklistItem, Tag } from '@/src/types';
+import useTaskStore from '@/src/store/taskStore';
+import useNotificationStore from '@/src/store/notificationStore';
 
 type TaskFormProps = {
   task?: Task;
@@ -34,12 +34,21 @@ type TaskFormProps = {
 
 const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
   const theme = useTheme();
-  const addTask = useTaskStore(state => state.addTask);
-  const updateTask = useTaskStore(state => state.updateTask);
-  const tags = useTaskStore(state => state.tags);
-  const projects = useTaskStore(state => state.projects);
-  const areas = useTaskStore(state => state.areas);
-  const addReminder = useNotificationStore(state => state.addReminder);
+  const addTask = useTaskStore((state: { addTask: (task: any) => void }) => state.addTask);
+  const updateTask = useTaskStore((state: { updateTask: (id: string, updates: Partial<Task>) => void }) => state.updateTask);
+  const tags = useTaskStore((state: { tags: Tag[] }) => state.tags);
+  const projects = useTaskStore((state: { projects: any[] }) => state.projects);
+  const areas = useTaskStore((state: { areas: any[] }) => state.areas);
+  const addReminder = useNotificationStore(
+    (state: { 
+      addReminder: (
+        taskId: string, 
+        scheduledTime: string, 
+        repeat: "none" | "daily" | "weekly" | "monthly" | "custom", 
+        customPattern?: string
+      ) => Promise<string> 
+    }) => state.addReminder
+  );
   
   // Form state
   const [title, setTitle] = useState('');
@@ -194,7 +203,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
       
       // Handle reminder if needed
       if (hasReminder && reminderTime) {
-        await addReminder(newTaskId, reminderTime.toISOString(), repeatOption);
+        await addReminder(
+          newTaskId, 
+          reminderTime.toISOString(), 
+          repeatOption as "none" | "daily" | "weekly" | "monthly" | "custom"
+        );
       }
     }
     
@@ -408,7 +421,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
             <Text style={styles.sectionTitle}>Tags</Text>
             
             <View style={styles.tagsContainer}>
-              {tags.map(tag => (
+              {tags.map((tag: Tag) => (
                 <Chip
                   key={tag.id}
                   selected={selectedTags.includes(tag.id)}
@@ -432,7 +445,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
             <Text style={styles.sectionTitle}>Project</Text>
             
             <View style={styles.projectsContainer}>
-              {projects.map(project => (
+              {projects.map((project: { id: string, name: string, color: string, icon: string }) => (
                 <Chip
                   key={project.id}
                   selected={selectedProject === project.id}
@@ -458,7 +471,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
             <Text style={styles.sectionTitle}>Area</Text>
             
             <View style={styles.areasContainer}>
-              {areas.map(area => (
+              {areas.map((area: { id: string, name: string, color: string, icon: string }) => (
                 <Chip
                   key={area.id}
                   selected={selectedArea === area.id}

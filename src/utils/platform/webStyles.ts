@@ -3,7 +3,7 @@ import { Platform, StyleProp, ViewStyle, TextStyle, ImageStyle } from 'react-nat
 // Import CSS only for web platform
 if (Platform.OS === 'web') {
   // Using require instead of import ensures the CSS is only loaded on web
-  require('../../app/web-styles.css');
+  require('@/src/styles/web-styles.css');
 }
 
 /**

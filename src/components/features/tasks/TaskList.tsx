@@ -3,7 +3,7 @@ import { StyleSheet, View, FlatList, TouchableOpacity, Alert } from 'react-nativ
 import { Text, useTheme, Searchbar, Menu, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Task as TaskType } from '../src/types';
+import { Task as TaskType } from '@/src/types';
 import TaskItem from './Task';
 
 type TaskListProps = {

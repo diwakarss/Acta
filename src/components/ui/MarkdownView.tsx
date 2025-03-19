@@ -1,8 +1,8 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View, Text } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { useMarkdown } from '../hooks';
-import { MarkdownElement, InlineElement, MarkdownStyles } from '../hooks/useMarkdown';
+import { useMarkdown } from '@/src/hooks/ui/useMarkdown';
+import { MarkdownElement, InlineElement, MarkdownStyles } from '@/src/hooks/ui/useMarkdown';
 
 interface MarkdownViewProps {
   content: string;

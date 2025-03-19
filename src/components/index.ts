@@ -10,4 +10,6 @@ export * from './layout';
 export * from './features/tasks';
 export * from './features/auth';
 export * from './features/sync';
-export * from './features/settings'; 
+export * from './features/settings';
+// TODO: Uncomment when settings feature components are implemented
+// export * from './features/settings'; 

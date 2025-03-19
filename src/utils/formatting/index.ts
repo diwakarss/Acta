@@ -5,8 +5,25 @@
  * These utilities handle date formatting, string formatting, number formatting, etc.
  */
 
-// Export formatting utilities
-// (Currently none moved yet)
+// Basic date formatting utility
+export const formatDate = (date: Date): string => {
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
 
-// As utilities are moved here, export them from this barrel file
+export const formatTime = (date: Date): string => {
+  return date.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+export const formatDateTime = (date: Date): string => {
+  return `${formatDate(date)} at ${formatTime(date)}`;
+};
+
+// As more formatting utilities are created, export them from this barrel file
 // Example: export * from './dateFormat'; 

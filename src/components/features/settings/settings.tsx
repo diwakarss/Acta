@@ -3,9 +3,9 @@ import { StyleSheet, View, ScrollView, Platform, Linking } from 'react-native';
 import { Text, List, Switch, useTheme, Divider } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useTheme as useAppTheme, ThemeMode } from '../src/hooks';
+import { useTheme as useAppTheme } from '@/src/hooks/ui/useTheme';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/src/components/AuthProvider';
+import { useAuth } from '@/src/components/features/auth/AuthProvider';
 
 export default function SettingsScreen() {
   const theme = useTheme();

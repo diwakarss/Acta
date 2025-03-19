@@ -5,8 +5,8 @@ import { useTheme, Text, Checkbox } from 'react-native-paper';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { format } from 'date-fns';
 
-import { Task as TaskType } from '../src/types';
-import useTaskStore from '../src/store/taskStore';
+import { Task as TaskType } from '@/src/types';
+import useTaskStore from '@/src/store/taskStore';
 
 type TaskProps = {
   task: TaskType;
@@ -17,7 +17,7 @@ type TaskProps = {
 
 const TaskItem: React.FC<TaskProps> = ({ task, onPress, onDelete, onEdit }) => {
   const theme = useTheme();
-  const completeTask = useTaskStore(state => state.completeTask);
+  const completeTask = useTaskStore((state: { completeTask: (id: string) => void }) => state.completeTask);
   
   const handleComplete = () => {
     completeTask(task.id);
@@ -121,7 +121,7 @@ const TaskItem: React.FC<TaskProps> = ({ task, onPress, onDelete, onEdit }) => {
                   color={theme.colors.onSurfaceVariant} 
                 />
                 <Text style={[styles.checklist, { color: theme.colors.onSurfaceVariant }]}>
-                  {task.checklist.filter(item => item.completed).length}/{task.checklist.length}
+                  {task.checklist.filter((item: { completed: boolean }) => item.completed).length}/{task.checklist.length}
                 </Text>
               </View>
             ) : null}

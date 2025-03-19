@@ -4,9 +4,9 @@ import { Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 
-import Widget from '../../src/components/Widget';
-import useTaskStore from '../../src/store/taskStore';
-import useWidgetStore from '../../src/store/widgetStore';
+import Widget from '@/src/components/features/widgets/Widget';
+import useTaskStore from '@/src/store/taskStore';
+import useWidgetStore from '@/src/store/widgetStore';
 
 export default function WidgetsScreen() {
   const { widgets, reorderWidgets, removeWidget } = useWidgetStore();
@@ -132,7 +132,7 @@ export default function WidgetsScreen() {
   
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Widgets' }} />
+      <Stack.Screen name="widgets" options={{ title: 'Widgets' }} />
       
       <View style={styles.header}>
         <Text style={styles.title}>Manage Widgets</Text>

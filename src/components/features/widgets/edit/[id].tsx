@@ -37,7 +37,7 @@ const ICONS = [
 ];
 
 export default function EditWidgetScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams() as { id: string };
   const { widgets, updateWidget, removeWidget } = useWidgetStore();
   const { projects, areas, tags } = useTaskStore();
   
@@ -198,7 +198,7 @@ export default function EditWidgetScreen() {
   
   return (
     <ScrollView style={styles.container}>
-      <Stack.Screen options={{ title: 'Edit Widget' }} />
+      <Stack.Screen name="edit" options={{ title: 'Edit Widget' }} />
       
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Widget Title</Text>

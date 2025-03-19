@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import NetInfo from '@react-native-community/netinfo';
-import useTaskStore from '../store/taskStore';
+import useTaskStore from '@/src/store/taskStore';
 import { formatDistanceToNow } from 'date-fns';
 import { Platform } from 'react-native';
 

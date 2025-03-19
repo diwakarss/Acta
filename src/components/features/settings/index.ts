@@ -6,7 +6,10 @@
  */
 
 // Export settings components
-// (Currently none moved yet)
+export { default as AccountSettings } from './account';
+export { default as EmailSettings } from './email';
+export { default as SettingsScreen } from './settings';
+export { default as ShortcutsSettings } from './shortcuts';
 
 // As components are moved here, export them from this barrel file
 // Example: export { default as ThemeSettings } from './ThemeSettings';

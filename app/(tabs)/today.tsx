@@ -3,10 +3,10 @@ import { StyleSheet, View, ScrollView, SafeAreaView } from 'react-native';
 import { Text, useTheme, FAB, Modal, Portal } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 
-import TaskList from '../../components/TaskList';
-import TaskForm from '../../components/TaskForm';
-import useTaskStore from '../../src/store/taskStore';
-import { Task } from '../../src/types';
+import TaskList from '@/src/components/features/tasks/TaskList';
+import TaskForm from '@/src/components/features/tasks/TaskForm';
+import useTaskStore from '@/src/store/taskStore';
+import { Task } from '@/src/types';
 
 export default function TodayScreen() {
   const theme = useTheme();

@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { useAuth } from '@/src/components/AuthProvider';
+import { useAuth } from '@/src/components/features/auth/AuthProvider';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');

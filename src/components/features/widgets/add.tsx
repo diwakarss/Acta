@@ -141,7 +141,7 @@ export default function AddWidgetScreen() {
   
   return (
     <ScrollView style={styles.container}>
-      <Stack.Screen options={{ title: 'Add Widget' }} />
+      <Stack.Screen name="add" options={{ title: 'Add Widget' }} />
       
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Widget Title</Text>

@@ -4,7 +4,7 @@ import { Text, useTheme, FAB, Modal, Portal, Card, IconButton, Button, TextInput
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
-import useTaskStore from '../../src/store/taskStore';
+import useTaskStore from '@/src/store/taskStore';
 
 // Define interfaces for Area and Project
 interface Area {

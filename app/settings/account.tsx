@@ -3,8 +3,8 @@ import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, Button, List, Avatar, Divider, Surface } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 
-import { useAuth } from '@/src/components/AuthProvider';
-import cloudSync from '@/src/utils/cloudSync';
+import { useAuth } from '@/src/components/features/auth/AuthProvider';
+import cloudSync from '@/src/utils/api/cloudSync';
 
 export default function AccountScreen() {
   const { user, signOut } = useAuth();

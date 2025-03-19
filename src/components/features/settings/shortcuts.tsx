@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, ScrollView, Alert, Platform } from 'react-native';
 import { Text, List, Switch, Button, useTheme, Divider } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SiriShortcuts } from '../../src/utils/SiriShortcuts';
-import useTaskStore from '../../src/store/taskStore';
+import { SiriShortcuts } from '@/src/utils/platform/SiriShortcuts';
+import useTaskStore from '@/src/store/taskStore';
 
 export default function ShortcutsScreen() {
   const theme = useTheme();
   const [isAvailable, setIsAvailable] = useState(false);
-  const projects = useTaskStore(state => state.projects);
+  const projects = useTaskStore((state: { projects: any[] }) => state.projects);
   
   // Check if Siri shortcuts are available
   useEffect(() => {

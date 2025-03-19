@@ -5,7 +5,7 @@ import { StoreApi } from 'zustand';
 import { Platform } from 'react-native';
 
 // Import cloud sync utilities
-import cloudSync from '../utils/cloudSync';
+import cloudSync from '@/src/utils/api/cloudSync';
 
 import { 
   Task, 

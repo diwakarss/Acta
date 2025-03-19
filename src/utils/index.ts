@@ -11,4 +11,4 @@ export * from './api';
 export * from './platform';
 
 // Re-export formatting utilities
-export * from './formatting'; 
+export * from './formatting';
