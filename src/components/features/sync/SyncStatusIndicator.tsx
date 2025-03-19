@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import useSyncStatus from '../hooks/useSyncStatus';
-import { combineStyles } from '@/src/utils/webStyles';
+import { useSyncStatus } from '@/src/hooks/data';
+import { combineStyles } from '@/src/utils/platform/webStyles';
 
 // Explicitly type the valid icon names
 type IconName = 'cloud-check' | 'cloud-off-outline' | 'cloud-sync' | 'cloud-alert' | 'cloud-question';

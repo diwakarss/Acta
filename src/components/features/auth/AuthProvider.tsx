@@ -20,7 +20,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import { maybeCompleteAuthSession } from 'expo-web-browser';
-import { getFirebaseAuth } from '../utils/firebase';
+import { getFirebaseAuth } from '@/src/utils/api/firebase';
 
 // Close the authentication window
 maybeCompleteAuthSession();

@@ -5,6 +5,8 @@
  * These constants define theme values, route names, configuration values, etc.
  */
 
+// Export constants
+export * from './routes';
+
 // As constants are created, export them from this barrel file
-// Example: export * from './theme';
-// Example: export * from './routes'; 
+// Example: export * from './theme'; 
