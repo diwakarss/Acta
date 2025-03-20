@@ -1,4 +1,4 @@
-# Acta Implementation Plan
+# Acta Implementation Plans
 
 ## Overview
 This document outlines the implementation plan for enhancing the Acta task management application to match the UI/UX and functionality of the Things 3 app. Based on a thorough analysis of both the target application and our current codebase, we've identified key gaps and created a phased approach to implementation.
