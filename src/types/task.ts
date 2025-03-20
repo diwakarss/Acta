@@ -31,6 +31,10 @@ export type Task = {
   color?: string;
   isEveningTask: boolean;
   isSomedayTask: boolean;
+  // Logbook related fields
+  completedAt: string | null;
+  archived: boolean;
+  category: 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook';
 };
 
 export type Project = {
